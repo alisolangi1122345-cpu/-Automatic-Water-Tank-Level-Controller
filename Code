@@ -1,0 +1,112 @@
+#include <LiquidCrystal.h>
+
+// LCD Pins
+LiquidCrystal lcd(4, 5, 6, 7, 8, 9);
+
+// HC-SR04 Pins
+const int trigPin = 2;
+const int echoPin = 3;
+
+// LEDs
+const int greenLED = 10;
+const int yellowLED = 11;
+const int redLED = 12;
+
+// Relay
+const int relayPin = 13;
+
+long duration;
+float distance;
+
+// Tank Height (cm)
+const float tankHeight = 20.0;
+
+void setup()
+{
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  pinMode(greenLED, OUTPUT);
+  pinMode(yellowLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+
+  pinMode(relayPin, OUTPUT);
+
+  digitalWrite(relayPin, LOW);
+
+  lcd.begin(16,2);
+  lcd.print("Water Tank");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop()
+{
+  // Trigger Pulse
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+
+  distance = duration * 0.034 / 2;
+
+  // Water Level %
+  float level = tankHeight - distance;
+
+  if(level < 0)
+    level = 0;
+
+  float percent = (level / tankHeight) * 100;
+
+  if(percent > 100)
+    percent = 100;
+
+  lcd.clear();
+
+  lcd.setCursor(0,0);
+  lcd.print("Level:");
+  lcd.print((int)percent);
+  lcd.print("%");
+
+  lcd.setCursor(0,1);
+
+  if(percent >= 80)
+  {
+      lcd.print("Tank Full");
+
+      digitalWrite(greenLED,HIGH);
+      digitalWrite(yellowLED,LOW);
+      digitalWrite(redLED,LOW);
+
+      digitalWrite(relayPin,LOW);   // Pump OFF
+  }
+
+  else if(percent >= 40)
+  {
+      lcd.print("Medium");
+
+      digitalWrite(greenLED,LOW);
+      digitalWrite(yellowLED,HIGH);
+      digitalWrite(redLED,LOW);
+
+      digitalWrite(relayPin,LOW);   // Pump OFF
+  }
+
+  else
+  {
+      lcd.print("Low! Pump ON");
+
+      digitalWrite(greenLED,LOW);
+      digitalWrite(yellowLED,LOW);
+      digitalWrite(redLED,HIGH);
+
+      digitalWrite(relayPin,HIGH);  // Pump ON
+  }
+
+  delay(500);
+}
